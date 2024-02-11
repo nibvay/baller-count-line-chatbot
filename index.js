@@ -19,6 +19,10 @@ const port = process.env.PORT || 3000;
 
 const app = express();
 
+app.get("/", (req, res) => {
+  res.send("check!");
+});
+
 // register a webhook handler with middleware
 // about the middleware, please refer to doc
 app.post("/callback", line.middleware(config), (req, res) => {
