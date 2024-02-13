@@ -5,14 +5,13 @@ const { JWT } = require("google-auth-library");
 
 const jwt = new JWT({
   email: process.env.CLIENT_EMAIL,
-  key: process.env.PRIVATE_KEY,
+  key: process.env.PRIVATE_KEY.replace(/\\n/g, "\n"),
   scopes: ["https://www.googleapis.com/auth/spreadsheets"],
 });
 
 async function getSheetData() {
   const doc = new GoogleSpreadsheet(process.env.SHEET_ID, jwt);
   await doc.loadInfo();
-
   const sheet = doc.sheetsByIndex[0];
   const rows = await sheet.getRows();
 
@@ -27,6 +26,8 @@ async function getSheetData() {
 
 function updateSheet() {
 }
+
+getSheetData();
 
 module.exports = {
   getSheetData,
