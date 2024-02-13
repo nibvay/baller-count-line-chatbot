@@ -20,7 +20,7 @@ const port = process.env.PORT || 3000;
 const app = express();
 
 app.get("/", (req, res) => {
-  res.send("check!");
+  res.send("check! check!");
 });
 
 // register a webhook handler with middleware
