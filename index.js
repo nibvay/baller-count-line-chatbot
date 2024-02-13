@@ -20,7 +20,7 @@ const port = process.env.PORT || 3000;
 const app = express();
 
 app.get("/", (req, res) => {
-  res.send("check! check!");
+  res.send("check!");
 });
 
 // register a webhook handler with middleware
@@ -49,6 +49,66 @@ async function handleEvent(event) {
     messages: [echo],
   });
 }
+
+// function updateSheet({
+//   sheet, groupId, userId, userMessage,
+// }) {
+//   if (userMessage.slice(0, 3) === "零打+") {
+//     const playCount = parseInt(userMessage[3], 10);
+//     const currentVal = sheet.getRange(ALTERNATE_RANGE).getValue();
+
+//     const username = getUserName({ groupId, userId });
+
+//     let newVal = "";
+//     if (currentVal.length > 0) {
+//       newVal = `${currentVal}+${[...new Array(playCount)].map(() => username).join("+")}`;
+//     } else {
+//       newVal = `${[...new Array(playCount)].map(() => username).join("+")}`;
+//     }
+
+//     sheet.getRange(ALTERNATE_RANGE).setValue(newVal);
+//     return generateCurrentResult();
+//   }
+//   if (userMessage.slice(0, 3) === "零打-") {
+//     let minusCount = parseInt(userMessage[3], 10);
+//     const currentVal = sheet.getRange(ALTERNATE_RANGE).getValue();
+
+//     if (currentVal.length > 0) {
+//       const targetName = getUserName({ groupId, userId });
+
+//       // consider use userId to filter
+//       const newVal = currentVal
+//         .split("+")
+//         .filter((name) => {
+//           if (minusCount === 0) return true;
+//           if (targetName === name) {
+//             minusCount -= 1;
+//             return false;
+//           }
+//           return true;
+//         })
+//         .join("+");
+
+//       sheet.getRange(ALTERNATE_RANGE).setValue(newVal);
+//       return generateCurrentResult();
+//     }
+//   } else if (userMessage === "自己-1") {
+//     const currentVal = sheet.getRange(LEAVE_RANGE).getValue();
+//     let newLeaveVal = "";
+//     const username = getUserName({ groupId, userId });
+//     if (currentVal.length > 0) {
+//       if (currentVal.split("+").findIndex((name) => name === username)) return "You already do 自己-1.";
+//       newLeaveVal = `${currentVal}+${username}`;
+//     } else {
+//       newLeaveVal = `${username}`;
+//     }
+
+//     sheet.getRange(LEAVE_RANGE).setValue(newLeaveVal);
+//     return generateCurrentResult();
+//   } else if (userMessage === "目前狀況") {
+//     return generateCurrentResult();
+//   }
+// }
 
 app.listen(port, () => {
   console.log(`listening on ${port}`);
