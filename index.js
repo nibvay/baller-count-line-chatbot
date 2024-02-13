@@ -39,7 +39,7 @@ async function handleEvent(event) {
   const { leave, alternate } = await getSheetData();
 
   const replyText = `my reply: ${event.message.text}\nleave: ${leave}\nalternate: ${alternate}`;
-
+  // const replyText = `my reply: ${event.message.text}`;
   // create an echoing text message
   const echo = { type: "text", text: replyText };
 

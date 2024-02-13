@@ -11,6 +11,7 @@
     "rules": {
         "max-len": 1,
         "no-use-before-define": 0,
+        "no-unused-vars": 1,
         "semi": ["error","always"],
         "quotes": ["error","double"]
     }
