@@ -2,7 +2,7 @@ require("dotenv").config();
 
 const line = require("@line/bot-sdk");
 const express = require("express");
-// const { getSheetData } = require("./googlesheet");
+const { getSheetData } = require("./googlesheet");
 
 // create LINE SDK config from env variables
 const config = {
@@ -36,10 +36,10 @@ app.post("/callback", line.middleware(config), (req, res) => {
 
 async function handleEvent(event) {
   if (event.type !== "message" || event.message.type !== "text") return Promise.resolve(null);
-  // const { leave, alternate } = await getSheetData();
+  const { leave, alternate } = await getSheetData();
 
-  // const replyText = `my reply: ${event.message.text}\nleave: ${leave}\nalternate: ${alternate}`;
-  const replyText = `my reply: ${event.message.text}`;
+  const replyText = `my reply: ${event.message.text}\nleave: ${leave}\nalternate: ${alternate}`;
+  // const replyText = `my reply: ${event.message.text}`;
   // create an echoing text message
   const echo = { type: "text", text: replyText };
 
