@@ -1,0 +1,2 @@
+* ngrok, Render
+  https://allen108108.github.io/blog/2023/04/20/Line%20Bot%20%E9%83%A8%E5%B1%AC%E5%B9%B3%E5%8F%B0%E7%9A%84%E9%81%B8%E6%93%87%20_%20%E4%BB%A5%20ngrok%20%E8%88%87%20Render%20%E4%BE%86%E5%8F%96%E4%BB%A3%20Heroku/

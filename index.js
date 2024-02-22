@@ -2,7 +2,8 @@ require("dotenv").config();
 
 const line = require("@line/bot-sdk");
 const express = require("express");
-const { getSheetData } = require("./googlesheet");
+const { readSheetData } = require("./googlesheet");
+const { getUserProfile } = require("./utilities");
 
 // create LINE SDK config from env variables
 const config = {
@@ -11,7 +12,7 @@ const config = {
 };
 
 // create LINE SDK client
-const client = new line.messagingApi.MessagingApiClient({
+const lineClient = new line.messagingApi.MessagingApiClient({
   channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
 });
 
@@ -36,78 +37,39 @@ app.post("/callback", line.middleware(config), (req, res) => {
 
 async function handleEvent(event) {
   if (event.type !== "message" || event.message.type !== "text") return Promise.resolve(null);
-  const { leave, alternate } = await getSheetData();
 
-  const replyText = `my reply: ${event.message.text}\nleave: ${leave}\nalternate: ${alternate}`;
+  const { leave, alternate } = await readSheetData(); // leave請假, alternate候補
+
+  // handleMessage({ leave, alternate, msg: event.message.text });
+  const { groupId, userId } = event.source;
   // const replyText = `my reply: ${event.message.text}`;
   // create an echoing text message
+  const { displayName } = await getUserProfile({ groupId, userId });
+  const replyText = `hi ${displayName}, my reply: ${event.message.text}\nleave: ${leave}\nalternate: ${alternate}`;
   const echo = { type: "text", text: replyText };
 
   // use reply API
-  return client.replyMessage({
+  return lineClient.replyMessage({
     replyToken: event.replyToken,
     messages: [echo],
   });
 }
 
-// function updateSheet({
-//   sheet, groupId, userId, userMessage,
-// }) {
-//   if (userMessage.slice(0, 3) === "零打+") {
-//     const playCount = parseInt(userMessage[3], 10);
-//     const currentVal = sheet.getRange(ALTERNATE_RANGE).getValue();
+// function handleMessage({ leave, alternate, msg }) {
+//   if (msg.slice(0, 3) === '零打+') {
+//     const playCount = parseInt(msg[3], 10);
+//     const username = getUsername({ lineClient, userId, groupId });
 
-//     const username = getUserName({ groupId, userId });
-
-//     let newVal = "";
-//     if (currentVal.length > 0) {
-//       newVal = `${currentVal}+${[...new Array(playCount)].map(() => username).join("+")}`;
+//     let newVal = '';
+//     if (alternate.length > 0) {
+//       newVal = `${alternate}+${[...new Array(playCount)].map(() => username).join('+')}`
 //     } else {
-//       newVal = `${[...new Array(playCount)].map(() => username).join("+")}`;
+//       newVal = `${[...new Array(playCount)].map(() => username).join('+')}`;
 //     }
 
-//     sheet.getRange(ALTERNATE_RANGE).setValue(newVal);
-//     return generateCurrentResult();
-//   }
-//   if (userMessage.slice(0, 3) === "零打-") {
-//     let minusCount = parseInt(userMessage[3], 10);
-//     const currentVal = sheet.getRange(ALTERNATE_RANGE).getValue();
+//     // set value: newVal
 
-//     if (currentVal.length > 0) {
-//       const targetName = getUserName({ groupId, userId });
-
-//       // consider use userId to filter
-//       const newVal = currentVal
-//         .split("+")
-//         .filter((name) => {
-//           if (minusCount === 0) return true;
-//           if (targetName === name) {
-//             minusCount -= 1;
-//             return false;
-//           }
-//           return true;
-//         })
-//         .join("+");
-
-//       sheet.getRange(ALTERNATE_RANGE).setValue(newVal);
-//       return generateCurrentResult();
-//     }
-//   } else if (userMessage === "自己-1") {
-//     const currentVal = sheet.getRange(LEAVE_RANGE).getValue();
-//     let newLeaveVal = "";
-//     const username = getUserName({ groupId, userId });
-//     if (currentVal.length > 0) {
-//       if (currentVal.split("+").findIndex((name) => name === username)) return "You already do 自己-1.";
-//       newLeaveVal = `${currentVal}+${username}`;
-//     } else {
-//       newLeaveVal = `${username}`;
-//     }
-
-//     sheet.getRange(LEAVE_RANGE).setValue(newLeaveVal);
-//     return generateCurrentResult();
-//   } else if (userMessage === "目前狀況") {
-//     return generateCurrentResult();
-//   }
+//   } else if (msg.slice(0, 3) === '零打-')
 // }
 
 app.listen(port, () => {

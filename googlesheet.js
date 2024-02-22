@@ -5,11 +5,11 @@ const { JWT } = require("google-auth-library");
 
 const jwt = new JWT({
   email: process.env.CLIENT_EMAIL,
-  key: process.env.PRIVATE_KEY.replace(/\\n/g, "\n"),
+  key: process.env.PRIVATE_KEY.replace(/\\n/g, "\n"), // https://stackoverflow.com/questions/74131595/error-error1e08010cdecoder-routinesunsupported-with-google-auth-library
   scopes: ["https://www.googleapis.com/auth/spreadsheets"],
 });
 
-async function getSheetData() {
+async function readSheetData() {
   const doc = new GoogleSpreadsheet(process.env.SHEET_ID, jwt);
   await doc.loadInfo();
   const sheet = doc.sheetsByIndex[0];
@@ -25,11 +25,10 @@ async function getSheetData() {
 }
 
 function updateSheet() {
+
 }
 
-getSheetData();
-
 module.exports = {
-  getSheetData,
+  readSheetData,
   updateSheet,
 };
