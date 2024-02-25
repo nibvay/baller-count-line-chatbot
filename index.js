@@ -2,7 +2,7 @@ require("dotenv").config();
 
 const line = require("@line/bot-sdk");
 const express = require("express");
-const { readSheetData } = require("./googlesheet");
+const { readSheetData, updateSheet } = require("./googlesheet");
 const { getUserProfile } = require("./utilities");
 
 // create LINE SDK config from env variables
@@ -38,14 +38,20 @@ app.post("/callback", line.middleware(config), (req, res) => {
 async function handleEvent(event) {
   if (event.type !== "message" || event.message.type !== "text") return Promise.resolve(null);
 
-  const { leave, alternate } = await readSheetData(); // leave請假, alternate候補
-
-  // handleMessage({ leave, alternate, msg: event.message.text });
   const { groupId, userId } = event.source;
+  const { leave, alternate } = await readSheetData(); // leave請假, alternate候補
+  const { displayName } = await getUserProfile({ groupId, userId });
+  console.log({ leave, alternate, displayName });
+
+  await handleMessage({
+    leave, alternate, msg: event.message.text, displayName,
+  });
+
+  const { leave: newLeave, alternate: newAlternate } = await readSheetData();
+  getCurrentResult({ leave: newLeave, alternate: newAlternate });
   // const replyText = `my reply: ${event.message.text}`;
   // create an echoing text message
-  const { displayName } = await getUserProfile({ groupId, userId });
-  const replyText = `hi ${displayName}, my reply: ${event.message.text}\nleave: ${leave}\nalternate: ${alternate}`;
+  const replyText = `hi ${displayName}, my reply: ${event.message.text}\nleave: ${newLeave}\nalternate: ${newAlternate}`;
   const echo = { type: "text", text: replyText };
 
   // use reply API
@@ -55,22 +61,48 @@ async function handleEvent(event) {
   });
 }
 
-// function handleMessage({ leave, alternate, msg }) {
-//   if (msg.slice(0, 3) === '零打+') {
-//     const playCount = parseInt(msg[3], 10);
-//     const username = getUsername({ lineClient, userId, groupId });
+async function handleMessage({
+  leave, alternate, msg, displayName,
+}) {
+  if (msg.slice(0, 3) === "零打+") {
+    const playCount = parseInt(msg[3], 10);
 
-//     let newVal = '';
-//     if (alternate.length > 0) {
-//       newVal = `${alternate}+${[...new Array(playCount)].map(() => username).join('+')}`
-//     } else {
-//       newVal = `${[...new Array(playCount)].map(() => username).join('+')}`;
-//     }
+    let newVal = "";
+    if (alternate.length > 0) {
+      newVal = `${alternate}+${[...new Array(playCount)].map(() => displayName).join("+")}`;
+    } else {
+      newVal = `${[...new Array(playCount)].map(() => displayName).join("+")}`;
+    }
+    await updateSheet("alternate", newVal);
+  } else if (msg.slice(0, 3) === "零打-") {
+    let minusCount = parseInt(msg[3], 10);
+    if (minusCount === 0) return;
+    if (alternate.length > 0) {
+      const newVal = alternate.split("+").filter((name) => {
+        if (minusCount === 0) return true;
+        if (name === displayName) {
+          minusCount -= 1;
+          return false;
+        }
+        return true;
+      }).join("+");
+      await updateSheet("alternate", newVal);
+    }
+  } else if (msg === "自己-1") {
+    let newVal;
+    if (leave.length > 0) {
+      if (!leave.split("+").findIndex((name) => name === displayName)) newVal = `${leave}+${displayName}`;
+    } else {
+      newVal = `${displayName}`;
+    }
 
-//     // set value: newVal
+    await updateSheet("leave", newVal);
+  }
+}
 
-//   } else if (msg.slice(0, 3) === '零打-')
-// }
+function getCurrentResult({ leave, alternate }) {
+
+}
 
 app.listen(port, () => {
   console.log(`listening on ${port}`);
