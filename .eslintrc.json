@@ -9,10 +9,17 @@
         "ecmaVersion": "latest"
     },
     "rules": {
-        "max-len": 1,
+        "max-len": 0,
         "no-use-before-define": 0,
         "no-unused-vars": 1,
-        "semi": ["error","always"],
-        "quotes": ["error","double"]
+        "object-curly-newline": 0,
+        "semi": [
+            "error",
+            "always"
+        ],
+        "quotes": [
+            "error",
+            "double"
+        ]
     }
 }
