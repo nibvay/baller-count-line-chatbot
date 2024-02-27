@@ -31,6 +31,7 @@ app.get("/", (req, res) => {
 // register a webhook handler with middleware
 // about the middleware, please refer to doc
 app.post("/callback", line.middleware(config), async (req, res) => {
+  console.log("inin callback");
   pendingQ.enqueue({ req, res });
   if (!pendingQ.isWorking) {
     await pendingQ.processPendingRequest(execute);
@@ -55,7 +56,7 @@ async function handleEvent(event) {
 
   const { groupId, userId } = event.source;
   const { leave, alternate } = await readSheetData(); // leave請假, alternate候補
-  // console.log("start", { msgText, leave, alternate, time: event.timestamp });
+  console.log("start", { msgText, leave, alternate, time: event.timestamp });
   const { displayName } = await getUserProfile({ groupId, userId });
   const isKeywords = await handleMessage({
     leave,
@@ -68,7 +69,7 @@ async function handleEvent(event) {
   const { altList, pendingList } = await getCurrentResult(newLeave, newAlternate);
   const replyText = `零打: ${altList.join(", ")}\n候補: ${pendingList.join(", ")}\n請假: ${newLeave}`;
   const echo = { type: "text", text: replyText };
-  // console.log("done", { time: event.timestamp });
+  console.log("done", { time: event.timestamp });
   return lineClient.replyMessage({
     replyToken: event.replyToken,
     messages: [echo],
