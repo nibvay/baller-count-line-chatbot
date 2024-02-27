@@ -10,7 +10,6 @@ async function getUserProfile({ groupId, userId }) {
 }
 
 function validMsgTime(timestamp) {
-  console.log({ timestamp });
   const date = new Date(timestamp);
 
   const dayOfWeek = date.getDay();

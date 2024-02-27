@@ -1,3 +1,5 @@
+/* eslint-disable no-await-in-loop */
+/* eslint-disable no-restricted-syntax */
 require("dotenv").config();
 
 const line = require("@line/bot-sdk");
@@ -5,6 +7,7 @@ const express = require("express");
 const { readSheetData, updateSheet, clearAll } = require("./googlesheet");
 const { getUserProfile, validMsgTime, validKeyword, getCurrentResult } = require("./utilities");
 const { addAlternate, minusAlternate, minusSelf } = require("./messageAction");
+// const { pendingQ } = require("./prendingQueue");
 
 // create LINE SDK config from env variables
 const config = {
@@ -21,38 +24,55 @@ const port = process.env.PORT || 3000;
 
 const app = express();
 
+let isWorking = false;
+const queue = [];
+
 app.get("/", (req, res) => {
   res.send("check!");
 });
 
 // register a webhook handler with middleware
 // about the middleware, please refer to doc
-app.post("/callback", line.middleware(config), (req, res) => {
-  Promise.all(req.body.events.map(handleEvent))
-    .then((result) => res.json(result))
-    .catch((err) => {
-      console.error(err);
-      res.status(500).end();
-    });
+app.post("/callback", line.middleware(config), async (req, res) => {
+  queue.push({ req, res });
+  if (!isWorking) {
+    processPendingRequest();
+  }
 });
+
+async function execute(req, res, callback) {
+  for (const event of req.body.events) {
+    await handleEvent(event)
+      .then((result) => {
+        callback();
+        return res.json(result);
+      })
+      .catch((err) => {
+        console.error(err);
+        res.status(500).end();
+      });
+  }
+}
+
+function processPendingRequest() {
+  if (queue.length === 0) return;
+  const { req, res } = queue.shift();
+  isWorking = true;
+  execute(req, res, () => {
+    isWorking = false;
+    processPendingRequest();
+  });
+}
 
 async function handleEvent(event) {
   if (event.type !== "message" || event.message.type !== "text") return Promise.resolve(null);
   if (!validMsgTime(event.timestamp)) return null;
   const msgText = event.message.text.toLocaleLowerCase();
   if (!validKeyword(msgText)) return null;
-
   const { groupId, userId } = event.source;
   const { leave, alternate } = await readSheetData(); // leave請假, alternate候補
+  console.log("start", { msgText, leave, alternate, time: event.timestamp });
   const { displayName } = await getUserProfile({ groupId, userId });
-  console.log({
-    msgText,
-    leave,
-    alternate,
-    displayName,
-    time: new Date(),
-  });
-
   const isKeywords = await handleMessage({
     leave,
     alternate,
@@ -64,7 +84,7 @@ async function handleEvent(event) {
   const { altList, pendingList } = await getCurrentResult(newLeave, newAlternate);
   const replyText = `零打: ${altList.join(", ")}\n候補: ${pendingList.join(", ")}\n請假: ${newLeave}`;
   const echo = { type: "text", text: replyText };
-
+  console.log("done", { time: event.timestamp });
   return lineClient.replyMessage({
     replyToken: event.replyToken,
     messages: [echo],
