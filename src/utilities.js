@@ -33,6 +33,7 @@ function validKeyword(msg) {
     pureMsg.slice(0, 3) === "零打-" ||
     pureMsg === "自己-1" ||
     pureMsg === "clear all" ||
+    pureMsg === "clear" ||
     pureMsg === "當周"
   );
 }
