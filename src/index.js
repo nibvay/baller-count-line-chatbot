@@ -31,11 +31,18 @@ app.get("/", (req, res) => {
 // register a webhook handler with middleware
 // about the middleware, please refer to doc
 app.post("/callback", line.middleware(config), async (req, res) => {
-  console.log("inin callback");
+  console.log("add one");
   pendingQ.enqueue({ req, res });
   if (!pendingQ.isWorking) {
     await pendingQ.processPendingRequest(execute);
   }
+  // Promise
+  //   .all(req.body.events.map(handleEvent))
+  //   .then((result) => res.json(result))
+  //   .catch((err) => {
+  //     console.error(err);
+  //     res.status(500).end();
+  //   });
 });
 
 async function execute({ req, res, event }) {
@@ -43,7 +50,7 @@ async function execute({ req, res, event }) {
     const result = await handleEvent(event);
     res.json(result);
   } catch (e) {
-    console.error(e);
+    console.error("cause an error", e.cause);
     res.status(500).end();
   }
 }
