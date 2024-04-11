@@ -59,28 +59,33 @@ async function handleEvent(event) {
   if (event.type !== "message" || event.message.type !== "text") return Promise.resolve(null);
   // if (!validMsgTime(event.timestamp)) return null;
   const msgText = event.message.text.toLocaleLowerCase();
-  if (!validKeyword(msgText)) return null;
-
-  const { groupId, userId } = event.source;
-  const { leave, alternate } = await readSheetData(); // leave請假, alternate候補
-  console.log("start", { msgText, leave, alternate, time: event.timestamp });
-  const { displayName } = await getUserProfile({ groupId, userId });
-  const isKeywords = await handleMessage({
-    leave,
-    alternate,
-    msg: msgText,
-    displayName,
-  });
-  if (!isKeywords) return null;
-  const { leave: newLeave, alternate: newAlternate } = await readSheetData();
-  const { altList, pendingList } = await getCurrentResult(newLeave, newAlternate);
-  const replyText = `零打: ${altList.join(", ")}\n候補: ${pendingList.join(", ")}\n請假: ${newLeave}`;
-  const echo = { type: "text", text: replyText };
-  console.log("done", { time: event.timestamp });
+  console.log({ msgText });
   return lineClient.replyMessage({
     replyToken: event.replyToken,
-    messages: [echo],
+    messages: [msgText],
   });
+  // if (!validKeyword(msgText)) return null;
+
+  // const { groupId, userId } = event.source;
+  // const { leave, alternate } = await readSheetData(); // leave請假, alternate候補
+  // console.log("start", { msgText, leave, alternate, time: event.timestamp });
+  // const { displayName } = await getUserProfile({ groupId, userId });
+  // const isKeywords = await handleMessage({
+  //   leave,
+  //   alternate,
+  //   msg: msgText,
+  //   displayName,
+  // });
+  // if (!isKeywords) return null;
+  // const { leave: newLeave, alternate: newAlternate } = await readSheetData();
+  // const { altList, pendingList } = await getCurrentResult(newLeave, newAlternate);
+  // const replyText = `零打: ${altList.join(", ")}\n候補: ${pendingList.join(", ")}\n請假: ${newLeave}`;
+  // const echo = { type: "text", text: replyText };
+  // console.log("done", { time: event.timestamp });
+  // return lineClient.replyMessage({
+  //   replyToken: event.replyToken,
+  //   messages: [echo],
+  // });
 }
 
 async function handleMessage({ leave, alternate, msg, displayName }) {
