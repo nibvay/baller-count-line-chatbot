@@ -59,59 +59,79 @@ async function handleEvent(event) {
   if (event.type !== "message" || event.message.type !== "text") return Promise.resolve(null);
   // if (!validMsgTime(event.timestamp)) return null;
   const msgText = event.message.text.toLocaleLowerCase();
-  console.log({ msgText });
+  if (!validKeyword(msgText)) return null;
+
+  const { groupId, userId } = event.source;
+  const { leave, alternate } = await readSheetData(); // leave請假, alternate候補
+  console.log("start", { msgText, leave, alternate, time: event.timestamp });
+  const { displayName } = await getUserProfile({ groupId, userId });
+  const { isKeywords, newLeave, newAlternate } = await handleMessage({
+    leave,
+    alternate,
+    msg: msgText,
+    displayName,
+  });
+  if (!isKeywords) return null;
+  // const { leave: newLeave, alternate: newAlternate } = await readSheetData();
+  const { altList, pendingList } = await getCurrentResult(newLeave, newAlternate);
+  console.log("done", { time: event.timestamp });
   return lineClient.replyMessage({
     replyToken: event.replyToken,
-    messages: [{ type: "text", text: msgText }],
+    messages: [{
+      type: "text",
+      text: `零打: ${altList.join(", ")}\n候補: ${pendingList.join(", ")}\n請假: ${newLeave}`,
+    }],
   });
-  // if (!validKeyword(msgText)) return null;
-
-  // const { groupId, userId } = event.source;
-  // const { leave, alternate } = await readSheetData(); // leave請假, alternate候補
-  // console.log("start", { msgText, leave, alternate, time: event.timestamp });
-  // const { displayName } = await getUserProfile({ groupId, userId });
-  // const isKeywords = await handleMessage({
-  //   leave,
-  //   alternate,
-  //   msg: msgText,
-  //   displayName,
-  // });
-  // if (!isKeywords) return null;
-  // const { leave: newLeave, alternate: newAlternate } = await readSheetData();
-  // const { altList, pendingList } = await getCurrentResult(newLeave, newAlternate);
-  // const replyText = `零打: ${altList.join(", ")}\n候補: ${pendingList.join(", ")}\n請假: ${newLeave}`;
-  // const echo = { type: "text", text: replyText };
-  // console.log("done", { time: event.timestamp });
-  // return lineClient.replyMessage({
-  //   replyToken: event.replyToken,
-  //   messages: [echo],
-  // });
 }
 
 async function handleMessage({ leave, alternate, msg, displayName }) {
   if (msg.slice(0, 3) === "零打+" || msg === "0+") {
     const newVal = addAlternate({ msg, displayName, alternate });
     if (newVal) await updateSheet("alternate", newVal);
-    return true;
+    return {
+      isKeywords: true,
+      newLeave: leave,
+      newAlternate: newVal,
+    };
   }
   if (msg.slice(0, 3) === "零打-") {
     const newVal = minusAlternate({ msg, displayName, alternate });
     if (newVal) await updateSheet("alternate", newVal);
-    return true;
+    return {
+      isKeywords: true,
+      newLeave: leave,
+      newAlternate: newVal,
+    };
   }
   if (msg === "自己-1") {
     const newVal = minusSelf({ leave, displayName });
     if (newVal) await updateSheet("leave", newVal);
-    return true;
+    return {
+      isKeywords: true,
+      newLeave: newVal,
+      newAlternate: alternate,
+    };
   }
   if (msg === "clear all" || msg === "clear") {
-    await clearAll();
-    return true;
+    await updateSheet("clearAll", null);
+    return {
+      isKeywords: true,
+      newLeave: "",
+      newAlternate: "",
+    };
   }
   if (msg === "當周") {
-    return true;
+    return {
+      isKeywords: true,
+      newLeave: leave,
+      newAlternate: alternate,
+    };
   }
-  return false;
+  return {
+    isKeywords: false,
+    newLeave: leave,
+    newAlternate: alternate,
+  };
 }
 
 app.listen(port, () => {

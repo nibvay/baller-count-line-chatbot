@@ -33,21 +33,12 @@ async function updateSheet(field, newValue) {
   } else if (field === "alternate") {
     const alternateCell = sheet.getCell(3, 1);
     alternateCell.value = newValue;
+  } else if (field === "clearAll") {
+    const leaveCell = sheet.getCell(2, 1);
+    leaveCell.value = "";
+    const alternateCell = sheet.getCell(3, 1);
+    alternateCell.value = "";
   }
-
-  await sheet.saveUpdatedCells();
-}
-
-async function clearAll() {
-  const doc = new GoogleSpreadsheet(process.env.SHEET_ID, jwt);
-  await doc.loadInfo();
-  const sheet = doc.sheetsByIndex[0];
-  await sheet.loadCells("A1:B4");
-
-  const leaveCell = sheet.getCell(2, 1);
-  leaveCell.value = "";
-  const alternateCell = sheet.getCell(3, 1);
-  alternateCell.value = "";
 
   await sheet.saveUpdatedCells();
 }
@@ -55,5 +46,4 @@ async function clearAll() {
 module.exports = {
   readSheetData,
   updateSheet,
-  clearAll,
 };
