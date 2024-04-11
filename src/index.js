@@ -62,7 +62,7 @@ async function handleEvent(event) {
   console.log({ msgText });
   return lineClient.replyMessage({
     replyToken: event.replyToken,
-    messages: [msgText],
+    messages: [{ type: "text", text: msgText }],
   });
   // if (!validKeyword(msgText)) return null;
 
