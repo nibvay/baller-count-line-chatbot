@@ -50,7 +50,7 @@ async function execute({ req, res, event }) {
     const result = await handleEvent(event);
     res.json(result);
   } catch (e) {
-    console.error("cause an error", e.cause);
+    console.error("cause an error", e);
     res.status(500).end();
   }
 }
