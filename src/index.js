@@ -4,9 +4,9 @@ require("dotenv").config();
 
 const line = require("@line/bot-sdk");
 const express = require("express");
-const { readSheetData, updateSheet, clearAll } = require("./googlesheet");
-const { getUserProfile, validMsgTime, validKeyword, getCurrentResult } = require("./utilities");
-const { addAlternate, minusAlternate, minusSelf } = require("./messageAction");
+const { readSheetData, updateSheet } = require("./googlesheet");
+const { getUserProfile, validMsgTime, validKeyword, organizeResult } = require("./utilities");
+const { addAlternate, minusAlternate, makeSelfLeave, cancelSelfLeave } = require("./messageAction");
 const { pendingQ } = require("./pendingQueue");
 
 // create LINE SDK config from env variables
@@ -31,7 +31,7 @@ app.get("/", (req, res) => {
 // register a webhook handler with middleware
 // about the middleware, please refer to doc
 app.post("/callback", line.middleware(config), async (req, res) => {
-  console.log("add one");
+  console.log("POST /callback");
   pendingQ.enqueue({ req, res });
   if (!pendingQ.isWorking) {
     await pendingQ.processPendingRequest(execute);
@@ -47,8 +47,7 @@ app.post("/callback", line.middleware(config), async (req, res) => {
 
 async function execute({ req, res, event }) {
   try {
-    const result = await handleEvent(event);
-    res.json(result);
+    await handleEvent(event);
   } catch (e) {
     console.error("cause an error", e);
     res.status(500).end();
@@ -57,55 +56,73 @@ async function execute({ req, res, event }) {
 
 async function handleEvent(event) {
   if (event.type !== "message" || event.message.type !== "text") return Promise.resolve(null);
-  // if (!validMsgTime(event.timestamp)) return null;
-  const msgText = event.message.text.toLocaleLowerCase();
-  if (!validKeyword(msgText)) return null;
+  try {
+    // if (!validMsgTime(event.timestamp)) return null;
+    const msgText = event.message.text.toLocaleLowerCase();
+    if (!validKeyword(msgText)) return null;
 
-  const { groupId, userId } = event.source;
-  const { leave, alternate } = await readSheetData(); // leave請假, alternate候補
-  console.log("start", { msgText, leave, alternate, time: event.timestamp });
-  const { displayName } = await getUserProfile({ groupId, userId });
-  const { isKeywords, newLeave, newAlternate } = await handleMessage({
-    leave,
-    alternate,
-    msg: msgText,
-    displayName,
-  });
-  if (!isKeywords) return null;
-  // const { leave: newLeave, alternate: newAlternate } = await readSheetData();
-  const { altList, pendingList } = await getCurrentResult(newLeave, newAlternate);
-  console.log("done", { time: event.timestamp });
-  return lineClient.replyMessage({
-    replyToken: event.replyToken,
-    messages: [{
-      type: "text",
-      text: `零打: ${altList.join(", ")}\n候補: ${pendingList.join(", ")}\n請假: ${newLeave}`,
-    }],
-  });
+    const { groupId, userId } = event.source;
+    const { leave, alternate } = await readSheetData(); // leave請假, alternate候補
+    console.log("start", { msgText, leave, alternate, time: event.timestamp });
+    const { displayName } = await getUserProfile({ groupId, userId });
+    const { isKeywords, newLeave, newAlternate } = await handleMessage({
+      leave,
+      alternate,
+      msg: msgText,
+      displayName,
+    });
+    if (!isKeywords) return null;
+
+    return lineClient.replyMessage({
+      replyToken: event.replyToken,
+      messages: [{
+        type: "text",
+        text: organizeResult({ alternate: newAlternate, leave: newLeave }),
+      }],
+    });
+  } catch (e) {
+    console.error("[Error]", e);
+    return lineClient.replyMessage({
+      replyToken: event.replyToken,
+      messages: [{
+        type: "text",
+        text: `${e}`,
+      }],
+    });
+  }
 }
 
 async function handleMessage({ leave, alternate, msg, displayName }) {
-  if (msg.slice(0, 3) === "零打+" || msg === "0+") {
+  if (msg.slice(0, 3) === "零打+" || msg.slice(0, 2) === "0+") {
     const newVal = addAlternate({ msg, displayName, alternate });
-    if (newVal) await updateSheet("alternate", newVal);
+    await updateSheet("alternate", newVal);
     return {
       isKeywords: true,
       newLeave: leave,
       newAlternate: newVal,
     };
   }
-  if (msg.slice(0, 3) === "零打-") {
+  if (msg.slice(0, 3) === "零打-" || msg.slice(0, 2) === "0-") {
     const newVal = minusAlternate({ msg, displayName, alternate });
-    if (newVal) await updateSheet("alternate", newVal);
+    await updateSheet("alternate", newVal);
     return {
       isKeywords: true,
       newLeave: leave,
       newAlternate: newVal,
     };
   }
-  if (msg === "自己-1") {
-    const newVal = minusSelf({ leave, displayName });
-    if (newVal) await updateSheet("leave", newVal);
+  if (msg === "請假") {
+    const newVal = makeSelfLeave({ leave, displayName });
+    await updateSheet("leave", newVal);
+    return {
+      isKeywords: true,
+      newLeave: newVal,
+      newAlternate: alternate,
+    };
+  }
+  if (msg === "取消請假") {
+    const newVal = cancelSelfLeave({ leave, displayName });
+    await updateSheet("leave", newVal);
     return {
       isKeywords: true,
       newLeave: newVal,
