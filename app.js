@@ -4,10 +4,10 @@ require("dotenv").config();
 
 const line = require("@line/bot-sdk");
 const express = require("express");
-const { readSheetData, updateSheet } = require("./googlesheet");
-const { getUserProfile, validMsgTime, validKeyword, organizeResult } = require("./utilities");
-const { addAlternate, minusAlternate, makeSelfLeave, cancelSelfLeave } = require("./messageAction");
-const { pendingQ } = require("./pendingQueue");
+const { readSheetData, updateSheet } = require("./src/googlesheet");
+const { getUserProfile, validMsgTime, validKeyword, organizeResult } = require("./src/utilities");
+const { addAlternate, minusAlternate, makeSelfLeave, cancelSelfLeave } = require("./src/messageAction");
+const { pendingQ } = require("./src/pendingQueue");
 
 // create LINE SDK config from env variables
 const config = {
@@ -154,3 +154,5 @@ async function handleMessage({ leave, alternate, msg, displayName }) {
 app.listen(port, () => {
   console.log(`listening on ${port}`);
 });
+
+module.exports = app;
