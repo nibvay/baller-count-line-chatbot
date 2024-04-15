@@ -20,7 +20,7 @@ const lineClient = new line.messagingApi.MessagingApiClient({
   channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
 });
 
-const port = process.env.PORT || 3000;
+// const port = process.env.PORT || 3000;
 
 const app = express();
 
@@ -151,8 +151,8 @@ async function handleMessage({ leave, alternate, msg, displayName }) {
   };
 }
 
-app.listen(port, () => {
-  console.log(`listening on ${port}....`);
-});
+// app.listen(port, () => {
+//   console.log(`listening on ${port}....`);
+// });
 
 module.exports = app;
