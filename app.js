@@ -32,17 +32,17 @@ app.get("/", (req, res) => {
 // about the middleware, please refer to doc
 app.post("/callback", line.middleware(config), async (req, res) => {
   console.log("POST /callback");
-  pendingQ.enqueue({ req, res });
-  if (!pendingQ.isWorking) {
-    await pendingQ.processPendingRequest(execute);
-  }
-  // Promise
-  //   .all(req.body.events.map(handleEvent))
-  //   .then((result) => res.json(result))
-  //   .catch((err) => {
-  //     console.error(err);
-  //     res.status(500).end();
-  //   });
+  // pendingQ.enqueue({ req, res });
+  // if (!pendingQ.isWorking) {
+  //   await pendingQ.processPendingRequest(execute);
+  // }
+  Promise
+    .all(req.body.events.map(handleEvent))
+    .then((result) => res.json(result))
+    .catch((err) => {
+      console.error(err);
+      res.status(500).end();
+    });
 });
 
 async function execute({ req, res, event }) {
