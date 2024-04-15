@@ -152,7 +152,7 @@ async function handleMessage({ leave, alternate, msg, displayName }) {
 }
 
 app.listen(port, () => {
-  console.log(`listening on ${port}`);
+  console.log(`listening on ${port}....`);
 });
 
 module.exports = app;
