@@ -1,5 +1,5 @@
 # baller-count-line-chatbot
-## How to use playball chatbot in line
+## How to use play ball chatbot in line
 * 要報名零打
   - 使用以下寫法:
     ```零打+1 or 零打+2 or 0+1 or 0+2 ...```
