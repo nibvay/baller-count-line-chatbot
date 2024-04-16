@@ -1,12 +1,18 @@
 /* eslint-disable operator-linebreak */
 
 const { CHANNEL_ACCESS_TOKEN } = process.env;
-async function getUserProfile({ groupId, userId }) {
+async function getUserProfile({ groupId, userId, renameInfo }) {
+  const newName = renameInfo
+    .split("\n")
+    .find((name) => name.split("!")[0] === userId)
+    ?.split("!")?.[1];
+  if (newName?.length > 0) return newName;
+
   const userProfile = await fetch(`https://api.line.me/v2/bot/group/${groupId}/member/${userId}`, {
     method: "GET",
     headers: { Authorization: `Bearer ${CHANNEL_ACCESS_TOKEN}` },
   }).then((response) => response.json());
-  return userProfile;
+  return userProfile.displayName;
 }
 
 function validMsgTime(timestamp) {
@@ -36,27 +42,10 @@ function validKeyword(msg) {
     pureMsg === "取消請假" ||
     pureMsg === "clear all" ||
     pureMsg === "clear" ||
-    pureMsg === "當周"
+    pureMsg === "當周" ||
+    pureMsg.slice(0, 2) === "叫我"
   );
 }
-
-// function getCurrentResult(leave, alternate) {
-//   const leaveList = leave.length > 0 ? leave.split("+") : [];
-//   const alternateList = alternate.length > 0 ? alternate.split("+") : [];
-//   const altList = [];
-//   const pendingList = [];
-//   let altCounter = 0;
-
-//   alternateList.forEach((altName) => {
-//     if (altCounter < leaveList.length) {
-//       altList.push(altName);
-//       altCounter += 1;
-//     } else {
-//       pendingList.push(altName);
-//     }
-//   });
-//   return { altList, pendingList };
-// }
 
 function organizeResult({ leave, alternate }) {
   console.log("in organizeResult", { leave, alternate });

@@ -13,31 +13,36 @@ async function readSheetData() {
   const doc = new GoogleSpreadsheet(process.env.SHEET_ID, jwt);
   await doc.loadInfo();
   const sheet = doc.sheetsByIndex[0];
-  await sheet.loadCells("A1:B4");
+  await sheet.loadCells("A1:B5");
 
   return {
     leave: sheet.getCell(2, 1).value ?? "",
     alternate: sheet.getCell(3, 1).value ?? "",
+    renameInfo: sheet.getCell(4, 1).value ?? "",
   };
 }
 
-async function updateSheet(field, newValue) {
+async function updateSheet(action, newValue) {
   const doc = new GoogleSpreadsheet(process.env.SHEET_ID, jwt);
   await doc.loadInfo();
   const sheet = doc.sheetsByIndex[0];
-  await sheet.loadCells("A1:B4");
+  await sheet.loadCells("A1:B5");
 
-  if (field === "leave") {
+  if (action === "leave") {
     const leaveCell = sheet.getCell(2, 1);
     leaveCell.value = newValue;
-  } else if (field === "alternate") {
+  } else if (action === "alternate") {
     const alternateCell = sheet.getCell(3, 1);
     alternateCell.value = newValue;
-  } else if (field === "clearAll") {
+  } else if (action === "clearAll") {
     const leaveCell = sheet.getCell(2, 1);
     leaveCell.value = "";
     const alternateCell = sheet.getCell(3, 1);
     alternateCell.value = "";
+  } else if (action === "rename") {
+    const renameCell = sheet.getCell(4, 1);
+    renameCell.value = newValue;
+    // TODO: syncName with other field
   }
 
   await sheet.saveUpdatedCells();

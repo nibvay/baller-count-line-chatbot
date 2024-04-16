@@ -52,9 +52,28 @@ function cancelSelfLeave({ leave, displayName }) {
   return newVal;
 }
 
+function rename({ msg, userId, renameInfo }) {
+  let newVal;
+  const newName = msg.slice(3).trim();
+  if (renameInfo.length > 0) {
+    const nameList = renameInfo.split("\n");
+    const targetIdx = nameList.findIndex((name) => name.split("!")[0] === userId);
+    if (targetIdx > -1) {
+      nameList[targetIdx] = `${userId}!${newName}`;
+    } else {
+      nameList.push(`${userId}!${newName}`);
+    }
+    newVal = nameList.join("\n");
+  } else {
+    newVal = `${userId}!${newName}`;
+  }
+  return newVal;
+}
+
 module.exports = {
   addAlternate,
   minusAlternate,
   makeSelfLeave,
   cancelSelfLeave,
+  rename,
 };

@@ -6,7 +6,7 @@ const line = require("@line/bot-sdk");
 const express = require("express");
 const { readSheetData, updateSheet } = require("./googlesheet");
 const { getUserProfile, validMsgTime, validKeyword, organizeResult } = require("./utilities");
-const { addAlternate, minusAlternate, makeSelfLeave, cancelSelfLeave } = require("./messageAction");
+const { addAlternate, minusAlternate, makeSelfLeave, cancelSelfLeave, rename } = require("./messageAction");
 const { pendingQ } = require("./pendingQueue");
 
 // create LINE SDK config from env variables
@@ -60,11 +60,18 @@ async function handleEvent(event) {
     // if (!validMsgTime(event.timestamp)) return null;
     const msgText = event.message.text.toLocaleLowerCase();
     if (!validKeyword(msgText)) return null;
-
     const { groupId, userId } = event.source;
-    const { leave, alternate } = await readSheetData(); // leave請假, alternate候補
+    const { leave, alternate, renameInfo } = await readSheetData(); // leave請假, alternate候補
     console.log("start", { msgText, leave, alternate, time: event.timestamp });
-    const { displayName } = await getUserProfile({ groupId, userId });
+
+    // rename
+    if (msgText.slice(0, 2) === "叫我") {
+      const newVal = rename({ msg: msgText, renameInfo, userId });
+      await updateSheet("rename", newVal);
+      return null;
+    }
+
+    const displayName = await getUserProfile({ groupId, userId, renameInfo });
     const { isKeywords, newLeave, newAlternate } = await handleMessage({
       leave,
       alternate,
@@ -92,7 +99,7 @@ async function handleEvent(event) {
   }
 }
 
-async function handleMessage({ leave, alternate, msg, displayName }) {
+async function handleMessage({ leave, alternate, msg, displayName, userId, renameInfo }) {
   if (msg.slice(0, 3) === "零打+" || msg.slice(0, 2) === "0+") {
     const newVal = addAlternate({ msg, displayName, alternate });
     await updateSheet("alternate", newVal);
